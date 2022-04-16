@@ -19,7 +19,7 @@ Circle cerc;
 // render
 bool quit = false;
 bool goingRight = false;
-bool animationRuning = true;
+bool animationRunning = true;
 bool isFullScreen = false;
 
 float elapsedTime;
@@ -96,19 +96,21 @@ void processEvents() {
     quit = true;
   }
 
+  // unneeded functionality commented out
+
   // Mouse event -> pressed button
-  if (currentEvent.type == SDL_MOUSEBUTTONDOWN) {
+  /* if (currentEvent.type == SDL_MOUSEBUTTONDOWN) {
     if (currentEvent.button.button == SDL_BUTTON_LEFT) {
       SDL_GetMouseState(&mouseX, &mouseY);
     }
     if (currentEvent.button.button == SDL_BUTTON_RIGHT) {
       SDL_GetMouseState(&mouseX, &mouseY);
     }
-  }
+  } */
 
   // Mouse event -> mouse movement
-  if (currentEvent.type == SDL_MOUSEMOTION)
-    SDL_GetMouseState(&mouseX, &mouseY);
+  /* if (currentEvent.type == SDL_MOUSEMOTION)
+       SDL_GetMouseState(&mouseX, &mouseY); */
 
   // Keyboard event
   if (currentEvent.type == SDL_KEYDOWN) {
@@ -134,7 +136,7 @@ void processEvents() {
       break;
 
     case SDLK_s:
-      animationRuning = !animationRuning;
+      animationRunning = !animationRunning;
       break;
 
     case SDLK_F11:
@@ -145,8 +147,6 @@ void processEvents() {
       isFullScreen = !isFullScreen;
 
       initObjects();
-      // rectangle.x = SDL_GetWindowSurface(window)->w / 2 - rectangle.w / 2;
-      // rectangle.y = SDL_GetWindowSurface(window)->h - rectangle.h;
 
       break;
 
@@ -164,11 +164,12 @@ void moveRect(float direction) {
   SDL_Surface *s = SDL_GetWindowSurface(window);
   int eq = dt * elapsedTime * direction;
 
-  if (0 < rectangle.y + eq && rectangle.y + rectangle.h + eq < s->h)
+  if (0 < rectangle.y + eq && rectangle.y + rectangle.h + eq < s->h &&
+      animationRunning) {
     rectangle.y += eq;
-
-  std::cout << "w: " << s->w << " x: " << rectangle.x << " h: " << s->h
-            << " y: " << rectangle.y << std::endl;
+    std::cout << "w: " << s->w << " x: " << rectangle.x << " h: " << s->h
+              << " y: " << rectangle.y << std::endl;
+  }
 }
 
 void animationStep() {
@@ -204,7 +205,7 @@ void animationStep() {
 
   // ball hits behind paddle
   if (cerc.center.x + cerc.center.r < rectangle.x + rectangle.w) {
-    animationRuning = false;
+    animationRunning = false;
     std::cout << "\nGame over! Score: \n";
   }
 }
@@ -227,7 +228,7 @@ void drawFrame() {
   // functions for circle are defined in "circle.h"
   SDL_FillCircle(windowRenderer, cerc);
 
-  if (animationRuning)
+  if (animationRunning)
     animationStep();
 
   // Update window
