@@ -4,17 +4,18 @@
 #include <iostream>
 
 // define window dimensions
-const int WINDOW_WIDTH = 1800;
-const int WINDOW_HEIGHT = 1000;
+constexpr int WINDOW_WIDTH = 854;
+constexpr int WINDOW_HEIGHT = 480;
 
 // define SDL Window related variables
 SDL_Window *window = NULL;
 SDL_Renderer *windowRenderer = NULL;
 SDL_Event currentEvent;
+int windowh, windoww;
 
 // shapes
 SDL_Rect rectangle;
-Circle cerc;
+Circle circle;
 
 // render
 bool quit = false;
@@ -26,55 +27,46 @@ float elapsedTime;
 float elapsedMS;
 
 // input
-int *windowh, *windoww;
 int mouseX, mouseY;
-glm::vec2 mousePos, oldMousePos;
+// glm::vec2 mousePos, oldMousePos;
 
 // circle
-float circleSpeed = 0.5f;
+constexpr float circleSpeed = 0.5f;
 glm::vec2 movementDirection;
-float dt = 0.1f;
+
+// time derivative
+constexpr float dt = 0.15f;
 float posX, posY;
 
+// functions
 void moveRect(float direction);
 void initObjects();
 
 bool initWindow() {
-
   bool success = true;
 
   // Try to initialize SDL
   if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-
     std::cout << "SDL initialization failed" << std::endl;
     success = false;
-
   } else {
-
     // Try to create the window
     window = SDL_CreateWindow(
         "Pong", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WINDOW_WIDTH,
         WINDOW_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI);
 
     if (window == NULL) {
-
       std::cout << "Failed to create window: " << SDL_GetError() << std::endl;
       success = false;
-
     } else {
-
       // Create a renderer for the current window
-      windowRenderer = SDL_CreateRenderer(
-          window, -1, SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_ACCELERATED);
+      windowRenderer = SDL_CreateRenderer(window, -1, 0);
 
       if (windowRenderer == NULL) {
-
-        std::cout << "Failed to create the renderer: " << SDL_GetError()
+        std::cout << "Failed to create renderer: " << SDL_GetError()
                   << std::endl;
         success = false;
-
       } else {
-
         // Set background color
         SDL_SetRenderDrawColor(windowRenderer, 255, 255, 255, 255);
 
@@ -88,6 +80,10 @@ bool initWindow() {
 }
 
 void processEvents() {
+  SDL_GetRendererOutputSize(windowRenderer, &windoww, &windowh);
+  // Update the surface
+  SDL_UpdateWindowSurface(window);
+
   // Check for events in queue
   SDL_PollEvent(&currentEvent);
 
@@ -151,7 +147,6 @@ void processEvents() {
       break;
 
     case SDLK_ESCAPE:
-
       quit = true;
       break;
     default:
@@ -161,53 +156,46 @@ void processEvents() {
 }
 
 void moveRect(float direction) {
-  SDL_Surface *s = SDL_GetWindowSurface(window);
-  int eq = dt * elapsedTime * direction;
+  int eq = dt * direction * 300;
 
-  if (0 < rectangle.y + eq && rectangle.y + rectangle.h + eq < s->h &&
+  if (rectangle.y + eq > 0 && rectangle.y + rectangle.h + eq < windowh &&
       animationRunning) {
     rectangle.y += eq;
-    std::cout << "w: " << s->w << " x: " << rectangle.x << " h: " << s->h
-              << " y: " << rectangle.y << std::endl;
+    std::cout << "w: " << windoww << " x: " << rectangle.x
+              << " h: " << windowh << " y: " << rectangle.y << std::endl;
   }
 }
 
 void animationStep() {
-
-  // check wall conditions
-  int x = cerc.center.x + cerc.center.r;
-  int y = cerc.center.y + cerc.center.r;
-  SDL_Surface *s = SDL_GetWindowSurface(window);
-
-  if (x >= s->w)
-    posX = 1;
-  if (x <= 0)
-    posX = -1;
-  if (y >= s->h)
-    posY = 1;
-  if (y <= 0)
-    posY = -1;
-
-  // check paddle
-  if (y >= rectangle.y && y <= rectangle.y + rectangle.h &&
-      x == rectangle.x + rectangle.w)
-
-    posY = 1;
-
-  glm::vec2 newPos = glm::vec2(posX, posY);
-  movementDirection = glm::normalize(cerc.center + newPos);
-
-  cerc.center += movementDirection * circleSpeed * dt * elapsedTime;
-
-  SDL_SetRenderDrawColor(windowRenderer, 255, 255, 255, 255);
-  SDL_RenderDrawLine(windowRenderer, cerc.center.x, cerc.center.y, mousePos.x,
-                     mousePos.y);
-
+  // ball hits paddle
+  if (circle.center.y + circle.radius >= rectangle.y &&
+      circle.center.y - circle.radius <= rectangle.y + rectangle.h &&
+      circle.center.x + circle.radius <= rectangle.x + rectangle.w)
+    posX = 1.f;
   // ball hits behind paddle
-  if (cerc.center.x + cerc.center.r < rectangle.x + rectangle.w) {
+  else if (circle.center.x + circle.radius < rectangle.x + rectangle.w) {
     animationRunning = false;
     std::cout << "\nGame over! Score: \n";
   }
+
+  // check wall conditions
+  if (circle.center.x + circle.radius >= windoww)
+    posX = -1.f;
+  else if (circle.center.x - circle.radius <= 0)
+    posX = 1.f;
+  else if (circle.center.y + circle.radius >= windowh)
+    posY = -1.f;
+  else if (circle.center.y - circle.radius <= 0)
+    posY = 1.f;
+
+  glm::vec2 newPos = glm::vec2(posX, posY);
+  movementDirection = normalize(newPos);
+
+  circle.center += movementDirection * circleSpeed * dt * elapsedTime;
+
+  SDL_SetRenderDrawColor(windowRenderer, 255, 255, 255, 255);
+  // SDL_RenderDrawLine(windowRenderer, circle.center.x, circle.center.y,
+  //                    mousePos.x, mousePos.y);
 }
 
 void drawFrame() {
@@ -226,7 +214,7 @@ void drawFrame() {
 
   // draw circle
   // functions for circle are defined in "circle.h"
-  SDL_FillCircle(windowRenderer, cerc);
+  SDL_FillCircle(windowRenderer, circle);
 
   if (animationRunning)
     animationStep();
@@ -240,7 +228,6 @@ void drawFrame() {
 }
 
 void cleanup() {
-
   // Destroy renderer
   if (windowRenderer) {
     SDL_DestroyRenderer(windowRenderer);
@@ -258,23 +245,22 @@ void cleanup() {
 }
 
 void initObjects() {
-
-  SDL_Surface *s = SDL_GetWindowSurface(window);
-
   // init rectangle
   rectangle.w = 30;
   rectangle.h = 200;
-  rectangle.x = rectangle.w / 2;
-  rectangle.y = s->h / 2;
+  rectangle.x = 10;
+  rectangle.y = windowh / 2;
 
   // init cerc
-  cerc.radius = 20.0f;
-  cerc.center.x = s->w / 2.0f;
-  cerc.center.y = s->h / 2.0f;
-  cerc.color = glm::vec4(255.0f, 255.0f, 255.0f, 255.0f);
+  circle.radius = 20.0f;
+  circle.center.x = windoww / 2.0f;
+  circle.center.y = windowh / 2.0f;
+  circle.color = glm::vec4(255.0f, 255.0f, 255.0f, 255.0f);
 
   // rng for positions
-  posX = std::rand() % 3 - 1, posY = rand() % 3 - 1;
+  posX = std::rand() % 3 - 1;
+  posY = std::rand() % 3 - 1;
+
   if (posX == 0)
     posX += -1;
   if (posY == 0)
@@ -282,7 +268,6 @@ void initObjects() {
 }
 
 int main() {
-
   // seed rng
   std::srand(time(NULL));
 

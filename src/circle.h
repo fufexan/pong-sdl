@@ -15,10 +15,10 @@ struct Circle {
         color = glm::vec4(0.0f, 0.0f, 0.0f, 255.0f);
     }
 
-    Circle(float r, glm::vec2 c, glm::vec4 col) {
-        radius = r;
-        center = c;
-        color = col;
+    Circle(float radius, glm::vec2 center, glm::vec4 color) {
+        radius = this->radius;
+        center = this->center;
+        color = this->color;
     }
 };
 
