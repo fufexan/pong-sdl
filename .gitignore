@@ -3,3 +3,6 @@
 !*.cpp
 !*.h
 !Makefile
+!flake.nix
+!flake.lock
+!.envrc
