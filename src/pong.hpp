@@ -9,7 +9,7 @@ public:
   ~Pong() = default;
 
   void game_loop();
-  void update(double delta_time);
+  void physics(double delta_time);
   void draw();
 
 private:

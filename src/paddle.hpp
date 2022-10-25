@@ -4,13 +4,18 @@
 
 class Paddle {
 public:
-	Paddle(int x, int y);
+	enum class Type {LEFT, RIGHT};
+	enum class Direction {NONE, UP, DOWN};
+	Paddle(Type type, int x, int y);
 	~Paddle() = default;
 	
 	void handle_input(SDL_Event const &event);
-	void update(double delta_time);
-	void draw();
+	void physics(double delta_time);
+	void draw(SDL_Renderer *renderer);
 
 private:
+	double m_y;
+	Type m_type;
 	SDL_Rect m_position;
+	Direction m_direction;
 };
