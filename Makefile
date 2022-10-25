@@ -1,5 +1,5 @@
 #OBJS specifies which files to compile as part of the project
-OBJS = src/main.cpp src/circle.cpp
+OBJS = src/*.cpp
 
 #OBJ_NAME specifies the name of our exectuable
 OBJ_NAME = main
